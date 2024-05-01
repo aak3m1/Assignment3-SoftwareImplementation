@@ -1,44 +1,48 @@
 import pickle
 class DataManager:
     def __init__(self):
-        self.employees = self.load_employees()
+        self.employees = self.load_data('employees.pkl')
+        self.events = self.load_data('events.pkl')
 
-    def load_employees(self):
+    def load_data(self, filename):
         try:
-            with open('employees.pkl', 'rb') as f:
-                employees = pickle.load(f)
+            with open(filename, 'rb') as f:
+                data = pickle.load(f)
         except (FileNotFoundError, EOFError):
-            employees = []
-        return employees
+            data = []
+        return data
 
-    def save_employees(self):
-        with open('employees.pkl', 'wb') as f:
-            pickle.dump(self.employees, f)
+    def save_data(self, data, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(data, f)
 
     def add_employee(self, employee):
         self.employees.append(employee)
-        self.save_employees()
+        self.save_data(self.employees, 'employees.pkl')
 
-    def get_employee_by_id(self, employee_id):
-        return next((emp for emp in self.employees if emp.employee_id == employee_id), None)
-
-    def update_employee(self, updated_employee):
-        for emp in self.employees:
-            if emp.employee_id == updated_employee.employee_id:
-                emp.name = updated_employee.name
-                emp.department = updated_employee.department
-                emp.job_title = updated_employee.job_title
-                emp.basic_salary = updated_employee.basic_salary
-                emp.age = updated_employee.age
-                emp.date_of_birth = updated_employee.date_of_birth
-                emp.passport_details = updated_employee.passport_details
-                self.save_employees()
-                break
+    def add_event(self, event):
+        self.events.append(event)
+        self.save_data(self.events, 'events.pkl')
 
     def delete_employee(self, employee_id):
-        self.employees = [emp for emp in self.employees if emp.employee_id != employee_id]
-        self.save_employees()
+        employee_id = int(employee_id)
+        self.employees = [emp for emp in self.employees if str(emp.employee_id) != str(employee_id)]
+        self.save_data(self.employees, 'employees.pkl')
+        print(f"Employees after deletion: {[emp.employee_id for emp in self.employees]}")
 
-    def search_employees(self, keyword):
-        results = [emp for emp in self.employees if keyword.lower() in str(emp.__dict__).lower()]
-        return results
+    def delete_event(self, event_id):
+        self.events = [event for event in self.events if event.event_id != event_id]
+        self.save_data(self.events, 'events.pkl')
+
+    def search_events(self, keyword):
+        try:
+            keyword = int(keyword)
+            return [event for event in self.events if event.event_id == keyword]
+        except ValueError:
+            return []
+
+    def refresh_employee_list(self):
+        self.employee_tree.delete(*self.employee_tree.get_children())
+        for employee in self.data_manager.employees:
+            values = [getattr(employee, attr) for attr in self.labels]
+            self.employee_tree.insert('', 'end', values=values)
