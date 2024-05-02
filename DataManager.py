@@ -4,7 +4,9 @@ class DataManager:
         self.employees = self.load_data('employees.pkl')
         self.events = self.load_data('events.pkl')
         self.clients = self.load_data('clients.pkl')
-
+        self.suppliers = self.load_data('suppliers.pkl')
+        self.guests = self.load_data('guests.pkl')
+        self.venues = self.load_data('venues.pkl')
     def load_data(self, filename):
         try:
             with open(filename, 'rb') as f:
@@ -97,3 +99,72 @@ class DataManager:
                 client.budget = updated_client.budget
                 self.save_data(self.clients, 'clients.pkl')
                 break
+
+    def add_supplier(self, supplier):
+        self.suppliers.append(supplier)
+        self.save_data(self.suppliers, 'suppliers.pkl')
+
+    def delete_supplier(self, supplier_id):
+        self.suppliers = [supplier for supplier in self.suppliers if supplier.supplier_id != supplier_id]
+        self.save_data(self.suppliers, 'suppliers.pkl')
+
+    def search_suppliers(self, keyword):
+        try:
+            keyword = int(keyword)
+            return [supplier for supplier in self.suppliers if supplier.supplier_id == keyword]
+        except ValueError:
+            return [supplier for supplier in self.suppliers if keyword.lower() in str(supplier.__dict__).lower()]
+
+    def load_guests(self):
+        try:
+            with open('guests.pkl', 'rb') as f:
+                guests = pickle.load(f)
+        except (FileNotFoundError, EOFError):
+            guests = []
+        return guests
+
+    def save_guests(self):
+        with open('guests.pkl', 'wb') as f:
+            pickle.dump(self.guests, f)
+
+    def add_guest(self, guest):
+        self.guests.append(guest)
+        self.save_guests()
+
+    def delete_guest(self, guest_id):
+        self.guests = [guest for guest in self.guests if guest.guest_id != guest_id]
+        self.save_guests()
+
+    def search_guests(self, keyword):
+        try:
+            keyword = int(keyword)
+            return [guest for guest in self.guests if guest.guest_id == keyword]
+        except ValueError:
+            return [guest for guest in self.guests if keyword.lower() in str(guest.__dict__).lower()]
+
+    def load_venues(self):
+        try:
+            with open('venues.pkl', 'rb') as f:
+                self.venues = pickle.load(f)
+        except (FileNotFoundError, EOFError):
+            self.venues = []
+        return self.venues
+
+    def save_venues(self):
+        with open('venues.pkl', 'wb') as f:
+            pickle.dump(self.venues, f)
+
+    def add_venue(self, venue):
+        self.venues.append(venue)
+        self.save_venues()
+
+    def delete_venue(self, venue_id):
+        self.venues = [venue for venue in self.venues if venue.venue_id != venue_id]
+        self.save_venues()
+
+    def search_venues(self, keyword):
+        try:
+            keyword = int(keyword)
+            return [venue for venue in self.venues if venue.venue_id == keyword]
+        except ValueError:
+            return [venue for venue in self.venues if keyword.lower() in str(venue.__dict__).lower()]
