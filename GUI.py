@@ -3,23 +3,29 @@ from tkinter import ttk, messagebox
 from DataManager import DataManager
 from Employee import Employee
 from Event import Event
+from Client import Client
 
 class MainApplication:
     def __init__(self, root):
         self.root = root
-        self.root.title("Best Events Company Management System")
+        self.root.title("Management System")
 
         self.tab_control = ttk.Notebook(root)
 
         self.employee_tab = ttk.Frame(self.tab_control)
         self.event_tab = ttk.Frame(self.tab_control)
+        self.client_tab = ttk.Frame(self.tab_control)
+
 
         self.tab_control.add(self.employee_tab, text='Employees')
         self.tab_control.add(self.event_tab, text='Events')
+        self.tab_control.add(self.client_tab, text='Clients')
 
         self.data_manager = DataManager()
         self.employee_gui = EmployeeGUI(self.employee_tab, self.data_manager)
         self.event_gui = EventGUI(self.event_tab, self.data_manager)
+        self.client_gui = ClientGUI(self.client_tab, self.data_manager)
+
 
         self.tab_control.pack(expand=1, fill="both")
 
@@ -77,13 +83,10 @@ class EmployeeGUI:
             self.employee_tree.column(label, width=100, anchor='w')
         self.refresh_employee_list()
 
-
-
     def add_employee(self):
         employee_data = {label: entry.get() for label, entry in self.entries.items()}
-        id = len(self.data_manager.employees)
-        print(employee_data)
-        employee = Employee(id, employee_data['Name'], employee_data['Employee ID'], employee_data['Department'], employee_data['Job Title'], employee_data['Basic Salary'], employee_data['Age'], employee_data['Date of Birth'], employee_data['Passport Details'])
+        print(employee_data)  # Print employee_data for debugging
+        employee = Employee(*employee_data.values())
         self.data_manager.add_employee(employee)
         self.refresh_employee_list()
         self.clear_employee_form()
@@ -114,14 +117,10 @@ class EmployeeGUI:
         selected_item = self.employee_tree.selection()
         if selected_item:
             item_values = self.employee_tree.item(selected_item, 'values')
-            employee_id = item_values[1]  # Adjust index based on your setup
-            print(f"Attempting to delete employee ID: {employee_id}")
-
-            # Call delete on DataManager with appropriate type handling
-            self.data_manager.delete_employee(str(employee_id))  # or int(employee_id), depending on how IDs are stored
+            employee_id = item_values[self.labels.index('Employee ID')]
+            self.data_manager.delete_employee(employee_id)
             self.refresh_employee_list()
             messagebox.showinfo('Success', 'Deleted employee successfully')
-            print(f"Employee {employee_id} deleted. Refreshing list.")
 
     def search_employee(self):
         keyword = self.entries['Employee ID'].get()
@@ -139,6 +138,8 @@ class EmployeeGUI:
 
     def convert_label_to_attribute(self, label):
         return label.lower().replace(" ", "_")
+
+
 class EventGUI:
     def __init__(self, root, data_manager):
         self.root = root
@@ -255,6 +256,111 @@ class EventGUI:
 
     def clear_event_form(self):
         for entry in self.event_entries.values():
+            entry.delete(0, tk.END)
+
+class ClientGUI:
+    def __init__(self, root, data_manager):
+        self.root = root
+        self.data_manager = data_manager
+
+        # Define frames
+        entry_frame = tk.Frame(root)
+        entry_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
+
+        button_frame = tk.Frame(root)
+        button_frame.grid(row=1, column=0, sticky="ew", padx=10)
+
+        display_frame = tk.Frame(root)
+        display_frame.grid(row=2, column=0, sticky="nsew", padx=10)
+        display_frame.grid_rowconfigure(0, weight=1)
+        display_frame.grid_columnconfigure(0, weight=1)
+
+        # Widgets for client details entry
+        self.client_labels = ['Client ID', 'Name', 'Address', 'Contact Details', 'Budget']
+        self.client_entries = {}
+        for i, label in enumerate(self.client_labels):
+            tk.Label(entry_frame, text=label + ":").grid(row=i, column=0, sticky="e", padx=5, pady=2)
+            entry = tk.Entry(entry_frame)
+            entry.grid(row=i, column=1, sticky="ew", padx=5, pady=2)
+            self.client_entries[label] = entry
+
+        # Buttons
+        self.add_client_button = tk.Button(button_frame, text="Add Client", command=self.add_client)
+        self.add_client_button.grid(row=0, column=0, padx=5, pady=5)
+
+        self.modify_client_button = tk.Button(button_frame, text="Modify Client", command=self.modify_client)
+        self.modify_client_button.grid(row=0, column=1, padx=5, pady=5)
+
+        self.delete_client_button = tk.Button(button_frame, text="Delete Client", command=self.delete_client)
+        self.delete_client_button.grid(row=0, column=2, padx=5, pady=5)
+
+        self.search_client_button = tk.Button(button_frame, text="Search by Client ID", command=self.search_client)
+        self.search_client_button.grid(row=0, column=3, padx=5, pady=5)
+
+        # Treeview with scrollbars
+        self.client_tree = ttk.Treeview(display_frame, columns=self.client_labels, show='headings', height=5)
+        vsb = ttk.Scrollbar(display_frame, orient="vertical", command=self.client_tree.yview)
+        hsb = ttk.Scrollbar(display_frame, orient="horizontal", command=self.client_tree.xview)
+        self.client_tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self.client_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+
+        # Adjust column width as necessary and enable horizontal scrolling
+        for label in self.client_labels:
+            self.client_tree.heading(label, text=label)
+            self.client_tree.column(label, width=120, anchor='w')
+
+        self.refresh_client_list()
+
+    def add_client(self):
+        client_data = {label: self.client_entries[label].get() for label in self.client_labels}
+        client_id = len(self.data_manager.clients) + 1
+        client = Client(client_id, client_data['Name'], client_data['Address'], client_data['Contact Details'], client_data['Budget'])
+        self.data_manager.add_client(client)
+        self.refresh_client_list()
+        self.clear_client_form()
+        messagebox.showinfo('Success', 'Added client successfully')
+
+    def modify_client(self):
+        selected_item = self.client_tree.selection()
+        if selected_item:
+            item_values = self.client_tree.item(selected_item, 'values')
+            for label, entry in self.client_entries.items():
+                entry.delete(0, tk.END)
+                entry.insert(0, item_values[self.client_labels.index(label)])
+
+    def save_client_changes(self):
+        selected_item = self.client_tree.selection()
+        if selected_item:
+            item_values = {label: self.client_entries[label].get() for label in self.client_labels}
+            updated_client = Client(item_values['Client ID'], item_values['Name'], item_values['Address'], item_values['Contact Details'], item_values['Budget'])
+            self.data_manager.update_client(updated_client)
+            self.refresh_client_list()
+            messagebox.showinfo('Success', 'Client details updated successfully')
+
+    def delete_client(self):
+        selected_item = self.client_tree.selection()
+        if selected_item:
+            client_id = self.client_tree.item(selected_item, 'values')[0]  # assuming the first value is the client ID
+            self.data_manager.delete_client(int(client_id))
+            self.refresh_client_list()
+            messagebox.showinfo('Success', 'Deleted client successfully')
+
+    def search_client(self):
+        keyword = self.client_entries['Client ID'].get()
+        results = self.data_manager.search_clients(keyword)
+        self.refresh_client_list(results)
+
+    def refresh_client_list(self, clients=None):
+        self.client_tree.delete(*self.client_tree.get_children())
+        clients = clients or self.data_manager.clients
+        for client in clients:
+            values = [getattr(client, label.lower().replace(" ", "_"), "") for label in self.client_labels]
+            self.client_tree.insert('', 'end', values=values)
+
+    def clear_client_form(self):
+        for entry in self.client_entries.values():
             entry.delete(0, tk.END)
 
 if __name__ == "__main__":
